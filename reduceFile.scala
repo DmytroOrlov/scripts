@@ -2,13 +2,13 @@
 /***
   scalaVersion := "2.11.7"
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0-M1"
+    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0-M2"
   )
 */
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import akka.stream.io.{Framing, InputStreamSource, OutputStreamSink}
+import akka.stream.io.Framing
 import akka.util.ByteString
 
 object Main {
@@ -18,12 +18,12 @@ object Main {
     implicit val materializer = ActorMaterializer()
 
     val delim: ByteString = ByteString("\n")
-    val f = InputStreamSource(() => System.in)
+    val f = Source.inputStream(() => System.in)
       .via(Framing.delimiter(delim, Int.MaxValue))
       .map(_ ++ delim)
       .toMat(
         //Sink.fold(mutable.LinkedHashSet.empty[ByteString])((set, line) => set -= line += line)
-        OutputStreamSink(() => System.out)
+        Sink.outputStream(() => System.out)
       )(Keep.right).run()
 
     f.onComplete {
