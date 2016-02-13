@@ -2,7 +2,7 @@
 /***
   scalaVersion := "2.11.7"
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0-M2"
+    "com.typesafe.akka" %% "akka-stream-experimental" % "2.0.3"
   )
 */
 import akka.actor.ActorSystem
@@ -13,14 +13,22 @@ import akka.stream.stage._
 import akka.util.ByteString
 
 import scala.collection.mutable
+import java.io.File
 
 object Main extends App {
-  implicit val system = ActorSystem("main")
-  implicit val context = system.dispatcher
+  implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
-  val delim: ByteString = ByteString("\n")
-  val f = Source.inputStream(() => System.in)
+  implicit val context = system.dispatcher
+
+  lazy val default = System.getProperty("user.home") + "/.bash_4history"
+  val path = if (args.length > 0) args(0) else default
+
+  val fileSource = FileIO.fromFile(new File(path))
+  val fileSink = FileIO.toFile(new File(path + (if (args.length > 1) args(1) else "-")))
+
+  val delim = ByteString("\n")
+  fileSource
     .via(Framing.delimiter(delim, Int.MaxValue))
     .fold(mutable.LinkedHashSet.empty[ByteString])((ls, l) => ls -= l += l)
     .transform(() => new PushPullStage[mutable.LinkedHashSet[ByteString], ByteString]() {
@@ -45,15 +53,7 @@ object Main extends App {
       private def doParse(ctx: Context[ByteString]): SyncDirective = ctx.push(buffer.get.next())
     })
     .map(_ ++ delim)
-    .toMat(
-      Sink.outputStream(() => System.out)
-    )(Keep.right).run()
-
-  f.onComplete {
-    //case Success(_) =>
-    case _ =>
-      system.shutdown()
-      System.out.flush()
-  }
+    .toMat(fileSink)(Keep.right).run()
+    .onComplete { case _ => system.shutdown() }
 }
 Main.main(args)
