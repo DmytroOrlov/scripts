@@ -5,14 +5,14 @@
     "com.typesafe.akka" %% "akka-stream" % "2.4.2"
   )
 */
+import java.io.File
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import akka.stream.stage._
 import akka.util.ByteString
 
 import scala.collection.mutable
-import java.io.File
 
 object Main extends App {
   implicit val system = ActorSystem()
@@ -30,29 +30,11 @@ object Main extends App {
   fileSource
     .via(Framing.delimiter(delim, Int.MaxValue))
     .fold(mutable.LinkedHashSet.empty[ByteString])((ls, l) => ls -= l += l)
-    .transform(() => new PushPullStage[mutable.LinkedHashSet[ByteString], ByteString]() {
-      var buffer: Option[Iterator[ByteString]] = None
-
-      override def onPush(set: mutable.LinkedHashSet[ByteString], ctx: Context[ByteString]): SyncDirective = {
-        buffer = Some(set.iterator)
-        doParse(ctx)
-      }
-
-      override def onPull(ctx: Context[ByteString]): SyncDirective = {
-        if (buffer.isEmpty) ctx.pull()
-        else if (buffer.get.hasNext) doParse(ctx)
-        else ctx.finish()
-      }
-
-      override def onUpstreamFinish(ctx: Context[ByteString]): TerminationDirective = {
-        if (buffer.get.hasNext) ctx.absorbTermination()
-        else ctx.finish()
-      }
-
-      private def doParse(ctx: Context[ByteString]): SyncDirective = ctx.push(buffer.get.next())
+    .mapConcat(ls => new scala.collection.immutable.Iterable[ByteString]() {
+      def iterator = ls.iterator
     })
     .map(_ ++ delim)
     .toMat(fileSink)(Keep.right).run()
-    .onComplete { case _ => system.shutdown() }
+    .onComplete { case _ => system.terminate() }
 }
 Main.main(args)
