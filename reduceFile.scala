@@ -29,7 +29,8 @@ object Main extends App {
   val delim = ByteString("\n")
   fileSource
     .via(Framing.delimiter(delim, Int.MaxValue))
-    .fold(mutable.LinkedHashSet.empty[ByteString])((ls, l) => ls -= l += l)
+    .grouped(5000)
+    .map(_.foldLeft(mutable.LinkedHashSet.empty[ByteString])((ls, l) => ls -= l += l))
     .mapConcat(ls => new scala.collection.immutable.Iterable[ByteString]() {
       def iterator = ls.iterator
     })
