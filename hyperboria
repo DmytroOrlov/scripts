@@ -1,2 +1,0 @@
-#!/bin/bash
-/Users/dorlov/repo/hyperboria/cjdroute < /Users/dorlov/repo/hyperboria/cjdroute.conf > /Users/dorlov/repo/hyperboria/cjdroute.log
