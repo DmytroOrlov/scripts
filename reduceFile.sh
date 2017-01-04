@@ -40,4 +40,3 @@ object ReduceFile {
     }
   }
 }
-ReduceFile.main(args)
