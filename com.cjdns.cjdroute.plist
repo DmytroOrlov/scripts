@@ -6,7 +6,7 @@
     <key>Label</key>
         <string>com.cjdns.cjdroute</string>
     <key>Program</key>
-        <string>/Users/dorlov/bin/cjdns</string>
+        <string>/Users/do/bin/cjdns</string>
     <key>RunAtLoad</key>
         <true/>
     <key>KeepAlive</key>
