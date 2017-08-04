@@ -1,2 +1,2 @@
 #/bin/bash
-java -Dsbt.main.class=sbt.ScriptMain -Dsbt.boot.directory=$HOME/.sbt/boot -jar /opt/local/share/sbt/sbt-launch.jar "$@"
+java -Dsbt.main.class=sbt.ScriptMain -Dsbt.boot.directory=$HOME/.sbt/boot -jar /Users/do/bin/homebrew/opt/sbt/libexec/bin/sbt-launch.jar "$@"
