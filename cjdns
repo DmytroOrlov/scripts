@@ -1,2 +1,2 @@
 #!/bin/bash
-/Users/do/bin/homebrew/bin/cjdroute --nobg < /Users/do/repo/cjdns/cjdroute.conf
+/Users/dorlov/bin/homebrew/bin/cjdroute --nobg < /Users/dorlov/git/cjdns/cjdroute.conf-15
