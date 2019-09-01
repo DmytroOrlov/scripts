@@ -22,24 +22,24 @@ def process(fs: Seq[(Path, Set[String], Path)], ts: List[String]): Seq[(Path, Se
       )
   }
 
-def removeJunk(wd: Path, name: String) = ls.rec! wd |? (_.name == name) | (f => rm(f))
-
-val ignore = "Users" :: "do" :: "dorlov" :: "Downloads" :: "Dropbox" :: Nil
-
-def files(wd: Path): Seq[(Path, Set[String], Path)] =
-  ls.rec! wd |? (_.isFile) | { p =>
-    (p, %%('tag, "--list", "--no-name", p.toString)(wd).out.lines.lastOption.fold(Set.empty[String])(_.split(',').toSet) ++ p.segments.filter(s => s != p.last && !ignore.contains(s)).toSet, wd)
-  }
+def removeJunk(wd: Path, name: String) = ls.rec! wd |? (_.last == name) | (f => rm(f))
 
 @main
 def main(wd: Path = pwd) = {
+  val ignore = "private" :: pwd.segments.toList
+
+  def files(wd: Path): Seq[(Path, Set[String], Path)] =
+    ls.rec! wd |? (_.isFile) | { p =>
+      (p, %%('tag, "--list", "--no-name", p.toString)(wd).out.lines.lastOption.fold(Set.empty[String])(_.split(',').toSet) ++ p.segments.filter(s => s != p.last && !ignore.contains(s)).toSet, wd)
+    }
+
   removeJunk(wd, ".DS_Store")
 
   val fs = files(wd)
   process(fs, sortTags(fs)).foreach {
     case (from, tags, to) =>
       mkdir(to)
-      val toFile = to/from.name
+      val toFile = to/from.last
       if (from != toFile)
         mv(from, toFile)
       %tag("--set", tags.mkString(","), toFile.toString)
