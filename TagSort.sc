@@ -28,15 +28,20 @@ def removeJunk(wd: Path, name: String) = ls.rec! wd |? (_.last == name) | (f => 
 def main(wd: Path = pwd) = {
   val ignore = "private" :: pwd.segments.toList
 
+  def sanitize(s: String) = s match {
+    case "Pictures" => "picture"
+    case s => s
+  }
+
   def files(wd: Path): Seq[(Path, Set[String], Path)] =
     ls.rec! wd |? (_.isFile) | { p =>
-      (p, %%('tag, "--list", "--no-name", p.toString)(wd).out.lines.lastOption.fold(Set.empty[String])(_.split(',').toSet) ++ p.segments.filter(s => s != p.last && !ignore.contains(s)).toSet, wd)
+      (p, %%('tag, "--list", "--no-name", p.toString)(wd).out.lines.lastOption.fold(Set.empty[String])(_.split(',').toSet) ++ p.segments.filter(s => s != p.last && !ignore.contains(s)).toSet.map(sanitize), wd)
     }
 
   removeJunk(wd, ".DS_Store")
 
   val fs = files(wd)
-  process(fs, sortTags(fs)).foreach {
+  process(fs, sortTags(fs).diff(ignore)).foreach {
     case (from, tags, to) =>
       mkdir(to)
       val toFile = to/from.last
